@@ -1,28 +1,20 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { runFinancialRiskAgent } from '@/lib/agent/financialAgent';
 import { useCurrency } from '@/lib/context/CurrencyContext';
 import { Plus, Trash2, AlertCircle } from 'lucide-react';
 
-const STANDARD_CATEGORIES = [
-  'Housing',
-  'Food',
-  'Transport',
-  'Utilities',
-  'Shopping',
-  'Entertainment',
-  'Healthcare',
-  'Education',
-  'Other',
-];
+const CORE_CATEGORIES = ['Housing', 'Food', 'Transport', 'Utilities'];
+const LIFESTYLE_CATEGORIES = ['Shopping', 'Entertainment'];
+const OTHER_CATEGORIES = ['Healthcare', 'Education'];
 
-export default function Assessment() {
+export default function AssessmentPage() {
   const router = useRouter();
   const { formatCurrency, currencySymbol } = useCurrency();
 
-  // State values
+  // State values initialized to zero
   const [income, setIncome] = useState<number>(0);
   const [expenses, setExpenses] = useState<Record<string, number>>({
     Housing: 0,
@@ -33,42 +25,30 @@ export default function Assessment() {
     Entertainment: 0,
     Healthcare: 0,
     Education: 0,
-    Other: 0,
   });
 
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [newCatName, setNewCatName] = useState<string>('');
+  
+  // Validation and analysis states
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
 
-  // Live calculated metrics
-  const [totalExpenses, setTotalExpenses] = useState<number>(0);
-  const [savings, setSavings] = useState<number>(0);
-  const [savingsRate, setSavingsRate] = useState<number>(0);
-  const [expenseRatio, setExpenseRatio] = useState<number>(0);
+  // Derived financial parameters calculated dynamically during render
+  const totalExpenses = Object.values(expenses).reduce((sum, val) => sum + val, 0);
+  const savings = income - totalExpenses;
+  const savingsRate = income > 0 ? (savings / income) * 100 : 0;
+  const expenseRatio = income > 0 ? (totalExpenses / income) * 100 : 0;
 
-  // Recalculate KPIs live
-  useEffect(() => {
-    const total = Object.values(expenses).reduce((sum, val) => sum + val, 0);
-    const save = income - total;
-    const saveRate = income > 0 ? (save / income) * 100 : 0;
-    const ratio = income > 0 ? (total / income) * 100 : 0;
-
-    setTotalExpenses(total);
-    setSavings(save);
-    setSavingsRate(saveRate);
-    setExpenseRatio(ratio);
-  }, [income, expenses]);
-
-  // Handle inputs
+  // Input event triggers
   const handleIncomeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = Number(e.target.value);
+    const val = parseFloat(e.target.value);
     setIncome(val >= 0 ? val : 0);
     setValidationError(null);
   };
 
   const handleExpenseChange = (category: string, value: string) => {
-    const val = Number(value);
+    const val = parseFloat(value);
     setExpenses((prev) => ({
       ...prev,
       [category]: val >= 0 ? val : 0,
@@ -82,7 +62,8 @@ export default function Assessment() {
     const cleanName = newCatName.trim();
     if (!cleanName) return;
 
-    if (expenses[cleanName] !== undefined || STANDARD_CATEGORIES.includes(cleanName)) {
+    const allCategories = [...CORE_CATEGORIES, ...LIFESTYLE_CATEGORIES, ...OTHER_CATEGORIES, ...customCategories];
+    if (expenses[cleanName] !== undefined || allCategories.includes(cleanName)) {
       setValidationError('Category already exists.');
       return;
     }
@@ -126,8 +107,9 @@ export default function Assessment() {
       
       // Navigate to report
       router.push('/report');
-    } catch (err: any) {
-      setValidationError(err.message || 'An error occurred during analysis.');
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : 'An error occurred during analysis.';
+      setValidationError(errMsg);
       setIsAnalyzing(false);
     }
   };
@@ -170,7 +152,7 @@ export default function Assessment() {
           >
             <span className="text-[11px] uppercase tracking-wider text-muted">{kpi.label}</span>
             <span
-              className={`text-2xl font-light tracking-tight ${
+              className={`text-xl sm:text-2xl font-light tracking-tight ${
                 kpi.isNegative ? 'text-white font-semibold line-through decoration-neutral-500' : 'text-white'
               }`}
             >
@@ -197,62 +179,128 @@ export default function Assessment() {
               <input
                 id="income-input"
                 type="number"
+                inputMode="decimal"
                 value={income === 0 ? '' : income}
                 onChange={handleIncomeChange}
                 placeholder="e.g. 35000"
-                className="w-full bg-black border border-border-subtle rounded-md px-3 py-2 text-white placeholder-muted focus:ring-1 focus:ring-white text-base lg:text-[16px]"
+                className="w-full h-11 bg-black border border-border-subtle rounded-md px-3 text-white placeholder-muted focus:ring-1 focus:ring-white text-base lg:text-[16px]"
               />
             </div>
 
-            {/* Expenses Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {/* Standard Categories */}
-              {STANDARD_CATEGORIES.map((category) => (
-                <div key={category} className="flex flex-col gap-2">
-                  <label
-                    htmlFor={`expense-${category}`}
-                    className="text-xs uppercase tracking-wider text-secondary-text"
-                  >
-                    {category} Spending ({currencySymbol})
-                  </label>
-                  <input
-                    id={`expense-${category}`}
-                    type="number"
-                    value={expenses[category] === 0 ? '' : expenses[category]}
-                    onChange={(e) => handleExpenseChange(category, e.target.value)}
-                    placeholder="0"
-                    className="w-full bg-black border border-border-subtle rounded-md px-3 py-2 text-white placeholder-muted focus:ring-1 focus:ring-white text-base lg:text-[16px]"
-                  />
+            {/* Expenses Groups */}
+            <div className="flex flex-col gap-8">
+              {/* Group 1: Core / Fixed Expenses */}
+              <div>
+                <h3 className="text-[11px] uppercase tracking-wider text-neutral-400 font-semibold mb-4">
+                  Core / Fixed Expenses
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  {CORE_CATEGORIES.map((category) => (
+                    <div key={category} className="flex flex-col gap-2">
+                      <label
+                        htmlFor={`expense-${category}`}
+                        className="text-xs uppercase tracking-wider text-secondary-text"
+                      >
+                        {category} ({currencySymbol})
+                      </label>
+                      <input
+                        id={`expense-${category}`}
+                        type="number"
+                        inputMode="decimal"
+                        value={expenses[category] === 0 ? '' : expenses[category]}
+                        onChange={(e) => handleExpenseChange(category, e.target.value)}
+                        placeholder="0"
+                        className="w-full h-11 bg-black border border-border-subtle rounded-md px-3 text-white placeholder-muted focus:ring-1 focus:ring-white text-base lg:text-[16px]"
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
 
-              {/* Custom Categories */}
-              {customCategories.map((category) => (
-                <div key={category} className="flex flex-col gap-2 relative">
-                  <label
-                    htmlFor={`expense-custom-${category}`}
-                    className="text-xs uppercase tracking-wider text-secondary-text flex items-center justify-between"
-                  >
-                    <span>{category} (Custom, {currencySymbol})</span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveCustomCategory(category)}
-                      className="text-muted hover:text-white transition-colors"
-                      aria-label={`Remove ${category}`}
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </label>
-                  <input
-                    id={`expense-custom-${category}`}
-                    type="number"
-                    value={expenses[category] === 0 ? '' : expenses[category]}
-                    onChange={(e) => handleExpenseChange(category, e.target.value)}
-                    placeholder="0"
-                    className="w-full bg-black border border-border-subtle rounded-md px-3 py-2 text-white placeholder-muted focus:ring-1 focus:ring-white text-base lg:text-[16px]"
-                  />
+              {/* Group 2: Lifestyle */}
+              <div className="border-t border-border-subtle/40 pt-6">
+                <h3 className="text-[11px] uppercase tracking-wider text-neutral-400 font-semibold mb-4">
+                  Lifestyle Spending
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  {LIFESTYLE_CATEGORIES.map((category) => (
+                    <div key={category} className="flex flex-col gap-2">
+                      <label
+                        htmlFor={`expense-${category}`}
+                        className="text-xs uppercase tracking-wider text-secondary-text"
+                      >
+                        {category} ({currencySymbol})
+                      </label>
+                      <input
+                        id={`expense-${category}`}
+                        type="number"
+                        inputMode="decimal"
+                        value={expenses[category] === 0 ? '' : expenses[category]}
+                        onChange={(e) => handleExpenseChange(category, e.target.value)}
+                        placeholder="0"
+                        className="w-full h-11 bg-black border border-border-subtle rounded-md px-3 text-white placeholder-muted focus:ring-1 focus:ring-white text-base lg:text-[16px]"
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              {/* Group 3: Other & Custom */}
+              <div className="border-t border-border-subtle/40 pt-6">
+                <h3 className="text-[11px] uppercase tracking-wider text-neutral-400 font-semibold mb-4">
+                  Other & Custom Allocations
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  {OTHER_CATEGORIES.map((category) => (
+                    <div key={category} className="flex flex-col gap-2">
+                      <label
+                        htmlFor={`expense-${category}`}
+                        className="text-xs uppercase tracking-wider text-secondary-text"
+                      >
+                        {category} ({currencySymbol})
+                      </label>
+                      <input
+                        id={`expense-${category}`}
+                        type="number"
+                        inputMode="decimal"
+                        value={expenses[category] === 0 ? '' : expenses[category]}
+                        onChange={(e) => handleExpenseChange(category, e.target.value)}
+                        placeholder="0"
+                        className="w-full h-11 bg-black border border-border-subtle rounded-md px-3 text-white placeholder-muted focus:ring-1 focus:ring-white text-base lg:text-[16px]"
+                      />
+                    </div>
+                  ))}
+
+                  {/* Custom Categories */}
+                  {customCategories.map((category) => (
+                    <div key={category} className="flex flex-col gap-2 relative">
+                      <label
+                        htmlFor={`expense-custom-${category}`}
+                        className="text-xs uppercase tracking-wider text-secondary-text flex items-center justify-between"
+                      >
+                        <span>{category} ({currencySymbol})</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCustomCategory(category)}
+                          className="text-neutral-500 hover:text-white transition-colors"
+                          aria-label={`Remove ${category}`}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </label>
+                      <input
+                        id={`expense-custom-${category}`}
+                        type="number"
+                        inputMode="decimal"
+                        value={expenses[category] === 0 ? '' : expenses[category]}
+                        onChange={(e) => handleExpenseChange(category, e.target.value)}
+                        placeholder="0"
+                        className="w-full h-11 bg-black border border-border-subtle rounded-md px-3 text-white placeholder-muted focus:ring-1 focus:ring-white text-base lg:text-[16px]"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -262,12 +310,12 @@ export default function Assessment() {
               type="text"
               value={newCatName}
               onChange={(e) => setNewCatName(e.target.value)}
-              placeholder="Custom category name (e.g. Subscriptions)"
-              className="flex-1 bg-black border border-border-subtle rounded-md px-3 py-2 text-white placeholder-muted focus:ring-1 focus:ring-white text-base lg:text-[16px]"
+              placeholder="Custom category (e.g. Subscriptions)"
+              className="flex-1 h-11 bg-black border border-border-subtle rounded-md px-3 text-white placeholder-muted focus:ring-1 focus:ring-white text-base lg:text-[16px]"
             />
             <button
               type="submit"
-              className="inline-flex items-center justify-center rounded-md border border-border-subtle bg-black text-white px-4 hover:bg-hover-surface transition-colors"
+              className="h-11 inline-flex items-center justify-center rounded-md border border-border-subtle bg-black text-white px-5 hover:bg-hover-surface active:scale-95 transition-all duration-200"
             >
               <Plus size={16} className="mr-1" /> Add
             </button>
@@ -317,7 +365,7 @@ export default function Assessment() {
               type="button"
               disabled={isAnalyzing}
               onClick={handleAnalyze}
-              className="w-full inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-[14px] font-medium text-black hover:bg-neutral-200 disabled:bg-neutral-600 disabled:text-neutral-400 transition-all-custom mt-4"
+              className="w-full h-12 inline-flex items-center justify-center rounded-full bg-white px-6 text-[14px] font-semibold text-black hover:bg-neutral-200 disabled:bg-neutral-600 disabled:text-neutral-400 active:scale-95 transition-all duration-200 mt-4"
             >
               {isAnalyzing ? 'Running Agent Engine...' : 'Analyze Financial Risk →'}
             </button>

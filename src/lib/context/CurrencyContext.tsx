@@ -38,7 +38,9 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const saved = localStorage.getItem('statfin_currency');
     if (saved && CURRENCIES[saved]) {
-      setSelectedCurrencyState(saved);
+      setTimeout(() => {
+        setSelectedCurrencyState(saved);
+      }, 0);
     }
   }, []);
 

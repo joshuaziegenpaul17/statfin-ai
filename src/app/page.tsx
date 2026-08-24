@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useCurrency } from '@/lib/context/CurrencyContext';
 import { motion, animate, useScroll, useTransform, useInView } from 'framer-motion';
-import { Check } from 'lucide-react';
+
 
 // Scroll Count-Up Helper component
 function ScrollCountUp({ value, isCurrency = false }: { value: number; isCurrency?: boolean }) {
@@ -156,7 +156,9 @@ export default function Home() {
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReducedMotion(mediaQuery.matches);
+    setTimeout(() => {
+      setReducedMotion(mediaQuery.matches);
+    }, 0);
     const listener = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     mediaQuery.addEventListener('change', listener);
     return () => mediaQuery.removeEventListener('change', listener);
@@ -190,7 +192,7 @@ export default function Home() {
         {/* Centered 3D Perspective Elliptical Orbits */}
         <motion.div
           style={{ y: orbitY }}
-          className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 opacity-20 [perspective:1000px] overflow-visible"
+          className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 opacity-15 sm:opacity-20 scale-[0.6] sm:scale-100 [perspective:1000px] overflow-visible"
         >
           {/* Ring 1 (Income) */}
           <div className="absolute w-[850px] h-[850px] rounded-full border border-dashed border-white/5 [transform:rotateX(73deg)_rotateY(10deg)]">
@@ -262,20 +264,20 @@ export default function Home() {
             <span className="italic font-serif">Statistically.</span>
           </h1>
 
-          <p className="font-sans text-sm sm:text-[17px] font-light leading-relaxed text-secondary-text max-w-xl text-center">
+          <p className="font-sans text-sm sm:text-[17px] font-light leading-relaxed text-secondary-text max-w-[340px] sm:max-w-xl text-center">
             StatFin AI transforms your financial data into statistical patterns, risk signals, and actionable insights. We isolate deterministic computation to guarantee privacy.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 mt-2">
+          <div className="flex flex-col sm:flex-row gap-4 mt-2 w-full max-w-[340px] sm:w-auto sm:max-w-none px-4 sm:px-0">
             <Link
               href="/assessment"
-              className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-[13px] font-medium text-black hover:bg-neutral-200 transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center rounded-full bg-white px-6 py-3.5 text-[13px] font-medium text-black hover:bg-neutral-200 transition-colors"
             >
               Start Assessment →
             </Link>
             <Link
               href="/historical"
-              className="inline-flex items-center justify-center rounded-full border border-border-subtle bg-dark-surface px-6 py-3 text-[13px] font-medium text-white hover:bg-hover-surface transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center rounded-full border border-border-subtle bg-dark-surface px-6 py-3.5 text-[13px] font-medium text-white hover:bg-hover-surface transition-colors"
             >
               Analyze Historical Data
             </Link>

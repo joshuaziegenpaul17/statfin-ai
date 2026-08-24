@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { CompleteAnalysisReport } from '@/lib/agent/financialAgent';
 import { useCurrency } from '@/lib/context/CurrencyContext';
 import { getCategoryColor } from '@/lib/utils/colors';
@@ -16,13 +15,13 @@ import {
   Bar,
   XAxis,
   YAxis,
-  Tooltip,
   LineChart,
   Line,
   CartesianGrid,
   Legend,
+  Tooltip,
 } from 'recharts';
-import { Check, ArrowLeft, Printer, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Printer, ShieldAlert } from 'lucide-react';
 
 // Number count-up helper
 function CountUp({ value, suffix = '', prefix = '', maxFractionDigits = 0 }: { value: number; suffix?: string; prefix?: string; maxFractionDigits?: number }) {
@@ -77,27 +76,168 @@ function CurrencyCountUp({ value }: { value: number }) {
   );
 }
 
+// Custom tooltip declared outside of render to prevent cascade rerenders
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CustomTooltip = ({ active, payload, formatCurrency }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-black border border-border-subtle rounded-xl p-4 text-[11px] font-mono text-white flex flex-col gap-1.5 shadow-2xl select-none">
+        <p className="font-semibold uppercase tracking-wider text-[10px] text-muted">
+          {data.name || data.month || 'Category'}
+        </p>
+        <p className="text-secondary-text">
+          AMOUNT SPENT: <span className="text-white font-medium">{formatCurrency(payload[0].value)}</span>
+        </p>
+        {data.percentage !== undefined && (
+          <p className="text-secondary-text">
+            PERCENTAGE: <span className="text-white font-medium">{data.percentage.toFixed(1)}%</span>
+          </p>
+        )}
+      </div>
+    );
+  }
+  return null;
+};
+
+// Animated circular progress gauge for mobile
+function RiskCircularRing({ score, level }: { score: number; level: string }) {
+  const radius = 50;
+  const stroke = 5;
+  const normalizedRadius = radius - stroke * 2;
+  const circumference = normalizedRadius * 2 * Math.PI;
+  const strokeDashoffset = circumference - (score / 100) * circumference;
+
+  let color = '#FFFFFF';
+  if (level === 'HIGH') color = '#D4D4D4';
+  else if (level === 'MODERATE') color = '#A3A3A3';
+
+  return (
+    <div className="flex flex-col items-center justify-center p-6 bg-dark-surface border border-border-subtle rounded-xl max-w-sm mx-auto w-full select-none">
+      <span className="text-[10px] uppercase tracking-[0.15em] text-muted mb-4 font-semibold">Financial Risk Score</span>
+      <div className="relative flex items-center justify-center w-36 h-36">
+        <svg className="w-full h-full transform -rotate-90">
+          <circle
+            stroke="rgba(255, 255, 255, 0.03)"
+            fill="transparent"
+            strokeWidth={stroke}
+            r={normalizedRadius}
+            cx={70}
+            cy={70}
+            className="w-[140px] h-[140px] origin-center scale-[1.35]"
+          />
+          <motion.circle
+            stroke={color}
+            fill="transparent"
+            strokeWidth={stroke}
+            strokeDasharray={circumference + ' ' + circumference}
+            initial={{ strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset }}
+            transition={{ duration: 1.5, ease: 'easeOut' }}
+            r={normalizedRadius}
+            cx={70}
+            cy={70}
+            className="w-[140px] h-[140px] origin-center scale-[1.35] stroke-linecap-round"
+          />
+        </svg>
+        <div className="absolute flex flex-col items-center justify-center">
+          <span className="text-4xl font-serif font-light text-white">
+            <CountUp value={score} />
+          </span>
+          <span className="text-[10px] text-muted uppercase tracking-wider mt-0.5">/ 100</span>
+        </div>
+      </div>
+      <span className="text-sm font-light text-white uppercase tracking-widest mt-5">{level} RISK</span>
+    </div>
+  );
+}
+
+// Responsive Agent pipeline diagram timeline
+function AgentTimeline() {
+  const steps = [
+    { title: 'STATISTICAL ENGINE', desc: 'Descriptive, variance, and anomaly analysis.' },
+    { title: 'RISK ENGINE', desc: 'Weighted score calculation (0-100).' },
+    { title: 'FINANCIAL AGENT', desc: 'Interpretation of metrics and data points.' },
+    { title: 'ACTIONABLE INSIGHT', desc: 'Premium risk analysis summary.' },
+  ];
+
+  return (
+    <div className="w-full py-4 select-none">
+      {/* Desktop Pipeline (Horizontal) */}
+      <div className="hidden md:flex items-start justify-between w-full relative">
+        <div className="absolute top-6 left-6 right-6 h-0.5 bg-neutral-900 z-0"></div>
+        {steps.map((step, idx) => (
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: idx * 0.15 }}
+            className="flex-1 flex flex-col items-center text-center relative z-10 px-2"
+          >
+            <div className="w-12 h-12 rounded-full border border-border-subtle bg-black flex items-center justify-center font-mono text-white text-xs font-semibold mb-3">
+              0{idx + 1}
+            </div>
+            <h4 className="text-[9px] tracking-widest uppercase font-semibold text-white">{step.title}</h4>
+            <p className="text-[9px] text-muted max-w-[125px] mt-1 font-light leading-relaxed">{step.desc}</p>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Mobile Pipeline (Vertical Timeline) */}
+      <div className="flex md:hidden flex-col items-center gap-6 relative w-full px-2">
+        <div className="absolute top-6 bottom-6 w-0.5 bg-neutral-900 left-1/2 -translate-x-1/2 z-0"></div>
+        {steps.map((step, idx) => (
+          <React.Fragment key={idx}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="w-full max-w-sm rounded-xl border border-border-subtle bg-dark-surface p-4 flex gap-4 items-center relative z-10"
+            >
+              <div className="w-10 h-10 rounded-full border border-border-subtle bg-black flex items-center justify-center font-mono text-white text-[11px] font-semibold shrink-0">
+                0{idx + 1}
+              </div>
+              <div className="flex flex-col text-left">
+                <h4 className="text-[10px] tracking-wider uppercase font-semibold text-white">{step.title}</h4>
+                <p className="text-[10px] text-muted mt-0.5 leading-relaxed font-light">{step.desc}</p>
+              </div>
+            </motion.div>
+            
+            {idx < steps.length - 1 && (
+              <div className="text-muted text-xs z-10 my-[-8px]">↓</div>
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Report() {
-  const router = useRouter();
   const [mounted, setMounted] = useState<boolean>(false);
   const [report, setReport] = useState<CompleteAnalysisReport | null>(null);
   
   // State for active pie segment hover feedback
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [activeSector, setActiveSector] = useState<any>(null);
 
   const { formatCurrency, replaceCurrencySymbols, currencySymbol } = useCurrency();
 
   // Load report from localStorage on mount
   useEffect(() => {
-    setMounted(true);
     const data = localStorage.getItem('statfin_report');
-    if (data) {
-      try {
-        setReport(JSON.parse(data));
-      } catch (e) {
-        console.error('Failed to parse local report:', e);
+    setTimeout(() => {
+      setMounted(true);
+      if (data) {
+        try {
+          setReport(JSON.parse(data));
+        } catch (e) {
+          console.error('Failed to parse local report:', e);
+        }
       }
-    }
+    }, 0);
   }, []);
 
   if (!mounted) {
@@ -139,11 +279,9 @@ export default function Report() {
     descriptiveStats,
     anomalyResult,
     regressionResult,
-    trendResult,
     riskAssessment,
     agentInsight,
     isHistorical,
-    rawIncome,
     rawExpenses,
     historicalData = [],
   } = report;
@@ -152,7 +290,7 @@ export default function Report() {
 
   // Process categories data with color matching
   const pieData = Object.entries(rawExpenses)
-    .filter(([_, value]) => value > 0)
+    .filter(([, value]) => value > 0)
     .map(([name, value]) => ({
       name,
       value,
@@ -177,31 +315,15 @@ export default function Report() {
     };
   });
 
-  // Custom tooltips
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-black border border-border-subtle rounded-xl p-4 text-[11px] font-mono text-white flex flex-col gap-1.5 shadow-2xl">
-          <p className="font-semibold uppercase tracking-wider text-[10px] text-muted">
-            {data.name || data.month || 'Category'}
-          </p>
-          <p className="text-secondary-text">
-            AMOUNT SPENT: <span className="text-white font-medium">{formatCurrency(payload[0].value)}</span>
-          </p>
-          {data.percentage !== undefined && (
-            <p className="text-secondary-text">
-              PERCENTAGE: <span className="text-white font-medium">{data.percentage.toFixed(1)}%</span>
-            </p>
-          )}
-        </div>
-      );
-    }
-    return null;
-  };
-
   const handlePrint = () => {
     window.print();
+  };
+
+  // Compress labels to keep margins clean on small viewports
+  const formatAxisValue = (val: number) => {
+    if (Math.abs(val) >= 1000000) return `${currencySymbol}${(val / 1000000).toFixed(1)}M`;
+    if (Math.abs(val) >= 1000) return `${currencySymbol}${(val / 1000).toFixed(0)}k`;
+    return `${currencySymbol}${val}`;
   };
 
   return (
@@ -223,29 +345,37 @@ export default function Report() {
         </button>
       </div>
 
-      {/* Hero Header */}
-      <section className="flex flex-col gap-4 max-w-4xl select-none">
-        <span className="text-xs uppercase tracking-[0.15em] text-muted animate-fade-in">
-          StatFin AI Prototype Risk Score
-        </span>
-        <h1 className="text-5xl sm:text-6xl font-light tracking-tight text-white print:text-black">
-          Financial Risk Report.
-        </h1>
-        <div className="flex items-baseline gap-4 mt-2">
-          <span className="text-[120px] font-serif leading-none text-white tracking-tighter print:text-black">
-            <CountUp value={riskAssessment.score} />
+      {/* Hero Header with Responsive Layout */}
+      <section className="flex flex-col md:flex-row justify-between items-center md:items-start gap-10 select-none">
+        <div className="flex flex-col gap-4 max-w-2xl text-center md:text-left">
+          <span className="text-xs uppercase tracking-[0.15em] text-muted animate-fade-in">
+            StatFin AI Prototype Risk Score
           </span>
-          <div className="flex flex-col">
-            <span className="text-xs uppercase tracking-[0.1em] text-muted">Classification</span>
-            <span className="text-xl font-light text-white uppercase tracking-wider print:text-black">
-              {riskAssessment.level} Risk
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-light tracking-tight text-white print:text-black">
+            Financial Risk Report.
+          </h1>
+          {/* Large text version displayed on desktop only */}
+          <div className="hidden md:flex items-baseline gap-4 mt-2">
+            <span className="text-[120px] font-serif leading-none text-white tracking-tighter print:text-black">
+              <CountUp value={riskAssessment.score} />
             </span>
+            <div className="flex flex-col">
+              <span className="text-xs uppercase tracking-[0.1em] text-muted">Classification</span>
+              <span className="text-xl font-light text-white uppercase tracking-wider print:text-black">
+                {riskAssessment.level} Risk
+              </span>
+            </div>
           </div>
+        </div>
+        
+        {/* Animated Circular Progress Gauge displayed on mobile, and next to title on desktop */}
+        <div className="w-full md:w-auto flex justify-center shrink-0">
+          <RiskCircularRing score={riskAssessment.score} level={riskAssessment.level} />
         </div>
       </section>
 
       {/* KPI Stats Row */}
-      <section className="grid grid-cols-2 md:grid-cols-5 gap-4 border-t border-b border-border-subtle py-8 print:border-neutral-300">
+      <section className="grid grid-cols-2 md:grid-cols-5 gap-6 border-t border-b border-border-subtle py-8 print:border-neutral-300">
         {[
           { label: 'Observed Income', val: metrics.income },
           { label: 'Total Expenditures', val: metrics.totalExpenses },
@@ -254,7 +384,7 @@ export default function Report() {
           { label: 'Expense Ratio', val: metrics.expenseRatio, suffix: '%' },
         ].map((kpi, idx) => (
           <div key={idx} className="flex flex-col gap-1 pr-4 md:border-r border-border-subtle last:border-0 print:border-neutral-300">
-            <span className="text-[10px] uppercase tracking-wider text-muted">{kpi.label}</span>
+            <span className="text-[10px] uppercase tracking-wider text-muted font-semibold">{kpi.label}</span>
             <span className="text-xl font-light text-white print:text-black">
               {kpi.suffix ? (
                 <CountUp value={kpi.val} suffix={kpi.suffix} maxFractionDigits={1} />
@@ -327,7 +457,7 @@ export default function Report() {
                 initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
+                transition={{ duration: 0.5, delay: idx * 0.15 }}
                 className="rounded-xl border border-border-subtle bg-dark-surface p-5 flex gap-4 items-start print:border-neutral-300 print:bg-neutral-50"
               >
                 <span className="font-mono text-xs text-muted border border-border-subtle rounded-full w-5 h-5 flex items-center justify-center shrink-0 print:border-neutral-300">
@@ -353,8 +483,8 @@ export default function Report() {
                   data={pieData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={70}
-                  outerRadius={90}
+                  innerRadius={65}
+                  outerRadius={85}
                   paddingAngle={3}
                   dataKey="value"
                   isAnimationActive={true}
@@ -372,7 +502,7 @@ export default function Report() {
                     />
                   ))}
                 </Pie>
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={<CustomTooltip formatCurrency={formatCurrency} />} />
               </PieChart>
             </ResponsiveContainer>
 
@@ -445,11 +575,10 @@ export default function Report() {
                   fontSize={10}
                   tickLine={false}
                   axisLine={{ stroke: '#2A2A2D' }}
-                  tickFormatter={(val) => `${currencySymbol}${val.toLocaleString('en-IN')}`}
+                  tickFormatter={formatAxisValue}
                 />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#242427', opacity: 0.3 }} />
+                <Tooltip content={<CustomTooltip formatCurrency={formatCurrency} />} cursor={{ fill: '#242427', opacity: 0.3 }} />
                 
-                {/* Dynamically colored bars mapping each element to its palette color */}
                 <Bar
                   dataKey="value"
                   isAnimationActive={true}
@@ -487,9 +616,9 @@ export default function Report() {
                       fontSize={10}
                       tickLine={false}
                       axisLine={{ stroke: '#2A2A2D' }}
-                      tickFormatter={(val) => `${currencySymbol}${val.toLocaleString('en-IN')}`}
+                      tickFormatter={formatAxisValue}
                     />
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: '#242427', opacity: 0.3 }} />
+                    <Tooltip content={<CustomTooltip formatCurrency={formatCurrency} />} cursor={{ fill: '#242427', opacity: 0.3 }} />
                     <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
                     <Bar dataKey="income" name="Income" fill="#ffffff" radius={[2, 2, 0, 0]} />
                     <Bar dataKey="expenses" name="Expenses" fill="#404040" radius={[2, 2, 0, 0]} />
@@ -517,9 +646,9 @@ export default function Report() {
                       fontSize={10}
                       tickLine={false}
                       axisLine={{ stroke: '#2A2A2D' }}
-                      tickFormatter={(val) => `${currencySymbol}${val.toLocaleString('en-IN')}`}
+                      tickFormatter={formatAxisValue}
                     />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<CustomTooltip formatCurrency={formatCurrency} />} />
                     <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
                     <Line
                       type="monotone"
@@ -556,34 +685,34 @@ export default function Report() {
       {isHistorical && descriptiveStats && anomalyResult && (
         <section className="rounded-xl border border-border-subtle bg-dark-surface p-6 flex flex-col gap-6 print:border-neutral-300 print:bg-white select-none">
           <h3 className="text-sm uppercase tracking-wider text-white print:text-black">Descriptive Dispersion Statistics</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-border-subtle print:divide-neutral-200">
-            <div className="pt-3 sm:pt-0 sm:px-4 first:pl-0">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-6">
+            <div className="p-2 sm:px-4">
               <span className="text-[10px] uppercase text-muted block mb-1">Mean Spending</span>
-              <span className="text-xl font-light text-white print:text-black">
+              <span className="text-lg sm:text-xl font-light text-white print:text-black">
                 <CurrencyCountUp value={descriptiveStats.mean} />
               </span>
             </div>
-            <div className="pt-3 sm:pt-0 sm:px-4">
+            <div className="p-2 sm:px-4">
               <span className="text-[10px] uppercase text-muted block mb-1">Median Spending</span>
-              <span className="text-xl font-light text-white print:text-black">
+              <span className="text-lg sm:text-xl font-light text-white print:text-black">
                 <CurrencyCountUp value={descriptiveStats.median} />
               </span>
             </div>
-            <div className="pt-3 sm:pt-0 sm:px-4">
+            <div className="p-2 sm:px-4">
               <span className="text-[10px] uppercase text-muted block mb-1">Standard Dev (S)</span>
-              <span className="text-xl font-light text-white print:text-black">
+              <span className="text-lg sm:text-xl font-light text-white print:text-black">
                 <CurrencyCountUp value={descriptiveStats.stdDev} />
               </span>
             </div>
-            <div className="pt-3 sm:pt-0 sm:px-4">
+            <div className="p-2 sm:px-4">
               <span className="text-[10px] uppercase text-muted block mb-1">IQR / Spacing</span>
-              <span className="text-xl font-light text-white print:text-black">
+              <span className="text-lg sm:text-xl font-light text-white print:text-black">
                 <CurrencyCountUp value={anomalyResult.iqr} />
               </span>
             </div>
-            <div className="pt-3 sm:pt-0 sm:px-4">
+            <div className="p-2 sm:px-4">
               <span className="text-[10px] uppercase text-muted block mb-1">Outliers Found</span>
-              <span className="text-xl font-light text-white print:text-black">
+              <span className="text-lg sm:text-xl font-light text-white print:text-black">
                 <CountUp value={anomalyResult.anomalies.length} />
               </span>
             </div>
@@ -611,7 +740,7 @@ export default function Report() {
       {/* Agent Reasoning Panel */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-12 border-t border-border-subtle pt-16 print:border-neutral-300">
         
-        {/* Step checklist representation */}
+        {/* Step checklist representation using unified AgentTimeline */}
         <div className="lg:col-span-1 flex flex-col gap-6 select-none">
           <span className="text-xs uppercase tracking-wider text-muted">Agent Workflow</span>
           <h2 className="text-xl font-light text-white print:text-black">StatFin Agent</h2>
@@ -619,23 +748,7 @@ export default function Report() {
             The Financial Risk Agent coordinates discrete tools sequentially, prioritizing metrics before drafting the final text.
           </p>
 
-          <div className="flex flex-col gap-4 font-mono text-[11px]">
-            {[
-              { num: '01', title: 'Financial metrics analyzed' },
-              { num: '02', title: 'Spending patterns examined' },
-              { num: '03', title: 'Anomaly detection checked' },
-              { num: '04', title: 'Linear regression evaluated' },
-              { num: '05', title: 'Risk score normalized' },
-              { num: '06', title: 'Narrative summary generated' },
-            ].map((step, idx) => (
-              <div key={idx} className="flex items-center gap-3 text-muted">
-                <span className="text-[10px] border border-border-subtle rounded-full w-4.5 h-4.5 flex items-center justify-center text-white bg-neutral-900 shrink-0 print:border-neutral-300">
-                  <Check size={10} />
-                </span>
-                <span className="text-secondary-text truncate">{step.title}</span>
-              </div>
-            ))}
-          </div>
+          <AgentTimeline />
         </div>
 
         {/* Narrative conclusions output */}

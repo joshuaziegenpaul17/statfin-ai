@@ -54,7 +54,9 @@ export default function Starfield() {
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReducedMotion(mediaQuery.matches);
+    setTimeout(() => {
+      setReducedMotion(mediaQuery.matches);
+    }, 0);
     const listener = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     mediaQuery.addEventListener('change', listener);
     return () => mediaQuery.removeEventListener('change', listener);
@@ -285,7 +287,7 @@ export default function Starfield() {
         }
 
         let currentSpeedY = star.speedY;
-        let currentSpeedX = star.speedX;
+        const currentSpeedX = star.speedX;
 
         // Parallax updates:
         if (star.layer === 2) {

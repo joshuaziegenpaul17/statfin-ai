@@ -3,9 +3,8 @@ import { Newsreader, Manrope } from 'next/font/google';
 import './globals.css';
 import Link from 'next/link';
 import { CurrencyProvider } from '@/lib/context/CurrencyContext';
-import CurrencySelector from '@/components/CurrencySelector';
 import Starfield from '@/components/Starfield';
-import Navbar from '@/components/Navbar';
+import Header from '@/components/Header';
 
 const newsreader = Newsreader({
   subsets: ['latin'],
@@ -23,7 +22,10 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   title: 'StatFin AI — Statistical Financial Intelligence',
   description:
-    'A personal financial risk assessment system combining deterministic statistical analysis with an agentic reasoning layer.',
+    'StatFin AI is a personal financial risk assessment tool combining statistical analysis with intelligent financial insights.',
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
@@ -39,50 +41,7 @@ export default function RootLayout({
           <Starfield />
 
           {/* Global Header Navigation */}
-          <header className="sticky top-0 z-50 w-full border-b border-border-subtle bg-background/80 backdrop-blur-md">
-            <div className="mx-auto flex h-16 max-w-[1520px] items-center justify-between px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center gap-12">
-                {/* Logo acts as Home Navigator */}
-                <Link
-                  href="/"
-                  className="font-serif text-xl tracking-[0.05em] uppercase hover:opacity-80 transition-opacity"
-                >
-                  StatFin AI
-                </Link>
-                
-                {/* Interactive Navbar Component */}
-                <Navbar />
-              </div>
-
-              <div className="flex items-center gap-6">
-                {/* Currency Selection Dropdown */}
-                <CurrencySelector />
-
-                <Link
-                  href="/assessment"
-                  className="hidden sm:inline-flex items-center justify-center rounded-full bg-white px-5 py-2 text-[13px] font-medium text-black hover:bg-neutral-200 transition-colors"
-                >
-                  Start Assessment →
-                </Link>
-                
-                {/* Mobile Menu Actions */}
-                <div className="md:hidden flex items-center gap-3">
-                  <Link
-                    href="/assessment"
-                    className="text-xs uppercase tracking-[0.08em] px-2.5 py-1.5 border border-border-subtle rounded-full text-white hover:bg-hover-surface"
-                  >
-                    Start
-                  </Link>
-                  <Link
-                    href="/historical"
-                    className="text-xs uppercase tracking-[0.08em] text-muted hover:text-white"
-                  >
-                    Upload
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </header>
+          <Header />
 
           {/* Page Content */}
           <main className="flex-1 flex flex-col relative z-10">{children}</main>

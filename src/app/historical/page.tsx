@@ -4,7 +4,7 @@ import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { parseFinancialFile, ValidationError } from '@/lib/utils/validation';
 import { runFinancialRiskAgent } from '@/lib/agent/financialAgent';
-import { Upload, Download, AlertTriangle, FileSpreadsheet, CheckCircle2 } from 'lucide-react';
+import { Upload, Download, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 export default function HistoricalAnalysis() {
   const router = useRouter();
@@ -48,6 +48,19 @@ export default function HistoricalAnalysis() {
   const processFile = (file: File) => {
     setErrors([]);
     setSuccessMsg(null);
+
+    // File Size Safeguard (Part 6) - Limit to 2 MB
+    if (file.size > 2 * 1024 * 1024) {
+      setErrors([
+        {
+          row: 0,
+          column: 'File Size',
+          message: 'File is too large to process. Please upload a smaller dataset.',
+        },
+      ]);
+      return;
+    }
+
     setIsProcessing(true);
 
     const reader = new FileReader();
@@ -94,12 +107,13 @@ export default function HistoricalAnalysis() {
         
         // Redirect to report page
         router.push('/report');
-      } catch (err: any) {
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : 'An error occurred during agent analysis.';
         setErrors([
           {
             row: 0,
             column: 'Agent Engine',
-            message: err.message || 'An error occurred during agent analysis.',
+            message: errMsg,
           },
         ]);
         setIsProcessing(false);

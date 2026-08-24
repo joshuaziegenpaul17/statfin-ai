@@ -103,7 +103,7 @@ export default function Methodology() {
             </div>
           </div>
           <p className="text-xs text-secondary-text leading-relaxed">
-            <strong>Interpretation:</strong> A positive slope m signifies increasing monthly expenditures. If m exceeds 1% of the mean monthly expense, the trend is classified as "Increasing" (suggesting inflation or lifestyle creep).
+            <strong>Interpretation:</strong> A positive slope m signifies increasing monthly expenditures. If m exceeds 1% of the mean monthly expense, the trend is classified as &quot;Increasing&quot; (suggesting inflation or lifestyle creep).
           </p>
         </div>
 

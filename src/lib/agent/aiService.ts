@@ -4,8 +4,12 @@ import { AgentInputData, AgentInsight, generateFallbackInsight } from './fallbac
  * Attempts to generate financial insights via the server-side AI route handler.
  * If the server-side AI provider is not configured, or if the request fails,
  * it automatically falls back to the deterministic client-side reasoning engine.
+ * Includes an 8-second request timeout safeguard using AbortController.
  */
 export async function generateFinancialInsight(data: AgentInputData): Promise<AgentInsight> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000); // 8-second timeout
+
   try {
     const response = await fetch('/api/analyze', {
       method: 'POST',
@@ -13,7 +17,10 @@ export async function generateFinancialInsight(data: AgentInputData): Promise<Ag
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error('AI analysis API returned non-OK status');
@@ -31,7 +38,8 @@ export async function generateFinancialInsight(data: AgentInputData): Promise<Ag
       recommendations: Array.isArray(result.recommendations) ? result.recommendations : [],
     };
   } catch (error) {
-    console.warn('AI service failed or is unconfigured. Triggering local statistical fallback agent:', error);
+    clearTimeout(timeoutId);
+    console.warn('AI service failed, timed out, or is unconfigured. Triggering local statistical fallback agent:', error);
     return generateFallbackInsight(data);
   }
 }

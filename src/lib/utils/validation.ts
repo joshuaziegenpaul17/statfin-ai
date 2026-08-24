@@ -30,6 +30,7 @@ const STANDARD_EXPENSES = [
  * Validates a single row of raw parsed data.
  */
 export function validateRow(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   row: any,
   rowIndex: number
 ): { data?: MonthlyData; errors: ValidationError[] } {
@@ -48,7 +49,7 @@ export function validateRow(
 
   // 2. Validate Income
   const incomeRaw = row['Income'];
-  let income = Number(incomeRaw);
+  const income = Number(incomeRaw);
   if (incomeRaw === undefined || incomeRaw === null) {
     errors.push({
       row: rowIndex + 2,
@@ -154,8 +155,38 @@ export function parseFinancialFile(fileBuffer: ArrayBuffer): ParseResult {
       };
     }
 
-    // Check headers on the first row
+    // Row Limit Safeguard (Part 6)
+    if (rawRows.length > 100) {
+      return {
+        success: false,
+        data: [],
+        errors: [
+          {
+            row: 0,
+            column: 'File',
+            message: 'File is too large to process. Please upload a smaller dataset (max 100 rows).',
+          },
+        ],
+      };
+    }
+
+    // Column Limit Safeguard (Part 6)
     const firstRowKeys = Object.keys(rawRows[0] as object);
+    if (firstRowKeys.length > 50) {
+      return {
+        success: false,
+        data: [],
+        errors: [
+          {
+            row: 0,
+            column: 'File',
+            message: 'File is too wide to process. Please upload a smaller dataset (max 50 columns).',
+          },
+        ],
+      };
+    }
+
+    // Check headers on the first row
     const missingHeaders = REQUIRED_COLUMNS.filter((col) => !firstRowKeys.includes(col));
 
     if (missingHeaders.length > 0) {
@@ -172,6 +203,7 @@ export function parseFinancialFile(fileBuffer: ArrayBuffer): ParseResult {
       };
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rawRows.forEach((row: any, idx: number) => {
       const { data: rowData, errors: rowErrors } = validateRow(row, idx);
       if (rowErrors.length > 0) {
@@ -181,7 +213,8 @@ export function parseFinancialFile(fileBuffer: ArrayBuffer): ParseResult {
       }
     });
 
-  } catch (err: any) {
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
     return {
       success: false,
       data: [],
@@ -189,7 +222,7 @@ export function parseFinancialFile(fileBuffer: ArrayBuffer): ParseResult {
         {
           row: 0,
           column: 'File',
-          message: `Failed to parse file structure. Reason: ${err.message || err}`,
+          message: `Failed to parse file structure. Reason: ${errMsg}`,
         },
       ],
     };
