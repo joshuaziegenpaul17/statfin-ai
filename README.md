@@ -139,14 +139,9 @@ Follow these steps to run the application locally:
 
 ---
 
-## Vercel Deployment
+## Deployment
 
-This project is built specifically to deploy out-of-the-box to Vercel:
-
-1. Connect your GitHub repository to Vercel.
-2. Select **Next.js** as the framework preset.
-3. (Optional) Set the environment variables in Vercel settings.
-4. Click **Deploy**.
+This application can be deployed to Vercel or any other hosting provider that supports Next.js App Router applications.
 
 ---
 
@@ -164,12 +159,30 @@ If these keys are left empty, the application runs entirely client-side using th
 
 ---
 
+## Supported Currencies
+
+The application features a global currency selector that updates all formatting displays dynamically:
+- **INR** (₹)
+- **USD** ($)
+- **EUR** (€)
+- **GBP** (£)
+- **JPY** (¥)
+- **CAD** (C$)
+- **AUD** (A$)
+- **SGD** (S$)
+- **AED** (د.إ)
+
+*Note: Currency selection updates display formatting only. Exchange-rate conversion is not currently performed.*
+
+---
+
 ## Sample Dataset
 
-A sample dataset containing 8 months of budget history in Indian Rupees (₹) is located in:
-`public/sample-financial-data.csv`
+A sample dataset containing 8 months of budget history is available for repository users and downloads:
+- Repository path: `sample-data/sample-financial-data.csv`
+- Public path: `public/sample-financial-data.csv`
 
-You can download it directly from the **Historical Analysis** page to test imports and outlier detection.
+You can download the template directly from the **Analysis** tab to test file uploads and time-series outliers.
 
 ---
 
@@ -189,7 +202,6 @@ Data security is built-in. StatFin AI stores your financial records strictly in 
 ## Future Improvements
 
 - Incorporate non-linear time-series forecasting (e.g., ARIMA models in browser WASM).
-- Introduce multi-currency support and localized budget thresholds.
 - Add client-side PDF export with automated tables.
 
 ---
