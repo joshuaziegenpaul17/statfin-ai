@@ -6,6 +6,9 @@
   <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=500&size=22&duration=3000&pause=800&color=CCCCCC&center=true&vCenter=true&width=650&lines=Deterministic+statistics.+Agentic+interpretation.;Client-side+risk+scoring+%E2%80%94+zero+persistent+databases.;Linear+regression+%2B+IQR+anomaly+detection.;100%25+free%2C+private%2C+and+works+without+an+API+key." alt="Typing SVG" />
 </a>
 
+
+### 🔗 [**Live Demo → statfin-ai.vercel.app**](https://statfin-ai.vercel.app/)
+
 </div>
 
 <br/>
@@ -124,6 +127,8 @@ The scoring system automatically adapts based on historical data availability:
 ![Recharts](https://img.shields.io/badge/Recharts-8884d8?style=for-the-badge)
 ![Lucide](https://img.shields.io/badge/Lucide_React-F56565?style=for-the-badge)
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-statfin--ai.vercel.app-2ea44f?style=for-the-badge&logo=vercel&logoColor=white)](https://statfin-ai.vercel.app/)
+
 </div>
 
 - **Framework:** Next.js 15+ (App Router)
@@ -154,6 +159,8 @@ Follow these steps to run the application locally:
 ## Deployment
 
 This application can be deployed to Vercel or any other hosting provider that supports Next.js App Router applications.
+
+🔗 **Live deployment:** [statfin-ai.vercel.app](https://statfin-ai.vercel.app/)
 
 ## Environment Variables
 
