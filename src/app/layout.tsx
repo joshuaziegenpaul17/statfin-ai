@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { CurrencyProvider } from '@/lib/context/CurrencyContext';
 import CurrencySelector from '@/components/CurrencySelector';
 import Starfield from '@/components/Starfield';
+import Navbar from '@/components/Navbar';
 
 const newsreader = Newsreader({
   subsets: ['latin'],
@@ -37,7 +38,7 @@ export default function RootLayout({
           {/* Background Animated Starfield */}
           <Starfield />
 
-          {/* Simplified Global Navigation */}
+          {/* Global Header Navigation */}
           <header className="sticky top-0 z-50 w-full border-b border-border-subtle bg-background/80 backdrop-blur-md">
             <div className="mx-auto flex h-16 max-w-[1520px] items-center justify-between px-4 sm:px-6 lg:px-8">
               <div className="flex items-center gap-12">
@@ -49,32 +50,8 @@ export default function RootLayout({
                   StatFin AI
                 </Link>
                 
-                <nav className="hidden md:flex items-center gap-8">
-                  <Link
-                    href="/assessment"
-                    className="font-sans text-[13px] uppercase tracking-[0.08em] text-muted hover:text-white transition-colors"
-                  >
-                    Assessment
-                  </Link>
-                  <Link
-                    href="/historical"
-                    className="font-sans text-[13px] uppercase tracking-[0.08em] text-muted hover:text-white transition-colors"
-                  >
-                    Analysis
-                  </Link>
-                  <Link
-                    href="/methodology"
-                    className="font-sans text-[13px] uppercase tracking-[0.08em] text-muted hover:text-white transition-colors"
-                  >
-                    Methodology
-                  </Link>
-                  <Link
-                    href="/about"
-                    className="font-sans text-[13px] uppercase tracking-[0.08em] text-muted hover:text-white transition-colors"
-                  >
-                    About
-                  </Link>
-                </nav>
+                {/* Interactive Navbar Component */}
+                <Navbar />
               </div>
 
               <div className="flex items-center gap-6">
@@ -120,7 +97,7 @@ export default function RootLayout({
                 </div>
                 <nav className="flex items-center gap-6 text-[12px]">
                   <Link href="/about" className="hover:text-white transition-colors">Privacy</Link>
-                  <Link href="/about" className="hover:text-white transition-colors">Disclaimer</Link>
+                  <Link href="/disclaimer" className="hover:text-white transition-colors">Disclaimer</Link>
                   <Link href="/methodology" className="hover:text-white transition-colors">Methodology</Link>
                 </nav>
               </div>
@@ -128,7 +105,7 @@ export default function RootLayout({
               <div className="border-t border-border-subtle pt-6 flex flex-col sm:flex-row justify-between gap-4 text-[11px] text-neutral-500">
                 <p>
                   Educational analysis only. Not professional financial advice. Read full{' '}
-                  <Link href="/about" className="text-neutral-400 hover:text-white underline">
+                  <Link href="/disclaimer" className="text-neutral-400 hover:text-white underline">
                     Disclaimer
                   </Link>
                   .

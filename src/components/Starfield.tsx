@@ -225,8 +225,13 @@ export default function Starfield() {
         grad.addColorStop(0, '#030507');
         grad.addColorStop(0.5, '#010203');
         grad.addColorStop(1, '#000000');
+      } else if (pathname === '/disclaimer' || pathname === '/about' || pathname === '/methodology') {
+        // Elegant dark atmospheric background
+        grad.addColorStop(0, '#020507');
+        grad.addColorStop(0.5, '#061316');
+        grad.addColorStop(1, '#000000');
       } else {
-        // Minimal/methodology
+        // Minimal
         grad.addColorStop(0, '#000000');
         grad.addColorStop(1, '#000000');
       }
