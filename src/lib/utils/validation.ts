@@ -1,4 +1,3 @@
-import * as XLSX from 'xlsx';
 import { MonthlyData } from '../statistics/metrics';
 
 export interface ValidationError {
@@ -46,6 +45,13 @@ export function validateRow(
     });
   }
   const month = String(monthRaw || '').trim();
+  if (month.startsWith('=') || month.startsWith('+') || month.startsWith('-') || month.startsWith('@')) {
+    errors.push({
+      row: rowIndex + 2,
+      column: 'Month',
+      message: `Invalid Month value "${monthRaw}". Month values cannot start with formula characters (=, +, -, @).`,
+    });
+  }
 
   // 2. Validate Income
   const incomeRaw = row['Income'];
@@ -125,11 +131,12 @@ export function validateRow(
 /**
  * Parses an Excel or CSV file buffer into validated MonthlyData.
  */
-export function parseFinancialFile(fileBuffer: ArrayBuffer): ParseResult {
+export async function parseFinancialFile(fileBuffer: ArrayBuffer): Promise<ParseResult> {
   const errors: ValidationError[] = [];
   const validData: MonthlyData[] = [];
 
   try {
+    const XLSX = await import('xlsx');
     const data = new Uint8Array(fileBuffer);
     const workbook = XLSX.read(data, { type: 'array' });
     
@@ -184,6 +191,24 @@ export function parseFinancialFile(fileBuffer: ArrayBuffer): ParseResult {
           },
         ],
       };
+    }
+
+    // Validate that no header keys start with formula characters (Part 5)
+    for (const key of firstRowKeys) {
+      const trimmedKey = key.trim();
+      if (trimmedKey.startsWith('=') || trimmedKey.startsWith('+') || trimmedKey.startsWith('-') || trimmedKey.startsWith('@')) {
+        return {
+          success: false,
+          data: [],
+          errors: [
+            {
+              row: 1,
+              column: key,
+              message: `Invalid column header "${key}". Headers cannot start with formula characters (=, +, -, @).`,
+            },
+          ],
+        };
+      }
     }
 
     // Check headers on the first row

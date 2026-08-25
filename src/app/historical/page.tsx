@@ -68,7 +68,7 @@ export default function HistoricalAnalysis() {
       const buffer = e.target?.result as ArrayBuffer;
       
       // Parse file using xlsx wrapper
-      const result = parseFinancialFile(buffer);
+      const result = await parseFinancialFile(buffer);
 
       if (!result.success) {
         setErrors(result.errors);

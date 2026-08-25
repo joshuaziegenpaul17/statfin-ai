@@ -11,12 +11,14 @@ const newsreader = Newsreader({
   variable: '--font-newsreader',
   style: ['normal', 'italic'],
   weight: ['300', '400'],
+  display: 'swap',
 });
 
 const manrope = Manrope({
   subsets: ['latin'],
   variable: '--font-manrope',
-  weight: ['200', '300', '400', '500', '600'],
+  weight: ['300', '400', '500', '600'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -70,14 +72,14 @@ export default function RootLayout({
                   .
                 </p>
                 <p>
-                  Built by{' '}
+                  Built by Joshua Ziegen Paul | GitHub:{' '}
                   <a
                     href="https://github.com/joshuaziegenpaul17"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-white hover:underline transition-all duration-200 hover:opacity-80 cursor-pointer font-medium"
                   >
-                    Joshua Ziegen Paul
+                    https://github.com/joshuaziegenpaul17
                   </a>
                 </p>
               </div>

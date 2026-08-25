@@ -183,22 +183,24 @@ export default function Starfield() {
       streaks = [];
     };
 
+    let resizeTimeout: NodeJS.Timeout;
     const handleResize = () => {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-      initEnvironment(width, height);
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        initEnvironment(width, height);
+      }, 150);
     };
 
-    handleResize();
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+    initEnvironment(width, height);
+
     window.addEventListener('resize', handleResize);
 
     // Main animation loop
     const animateLoop = () => {
-      if (document.visibilityState === 'hidden') {
-        animationId = requestAnimationFrame(animateLoop);
-        return;
-      }
-
       ctx.clearRect(0, 0, width, height);
 
       // --- 1. Environmental Gradient Background Fill ---
@@ -340,12 +342,13 @@ export default function Starfield() {
 
         ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${star.opacity * starFadeFactor})`;
         
-        if (star.layer === 2 && star.size >= 2) {
-          ctx.shadowBlur = 3;
-          ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
-        }
         ctx.fill();
-        ctx.shadowBlur = 0;
+        if (width >= 768 && star.layer === 2 && star.size >= 2) {
+          ctx.beginPath();
+          ctx.arc(star.x, star.y, star.size + 1.5, 0, 2 * Math.PI);
+          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${star.opacity * 0.25 * starFadeFactor})`;
+          ctx.fill();
+        }
       }
 
       // --- 4. Occasions Star Streaks ---
@@ -524,10 +527,25 @@ export default function Starfield() {
       animationId = requestAnimationFrame(animateLoop);
     };
 
-    animateLoop();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        cancelAnimationFrame(animationId);
+        animationId = requestAnimationFrame(animateLoop);
+      } else {
+        cancelAnimationFrame(animationId);
+      }
+    };
+
+    if (document.visibilityState === 'visible') {
+      animateLoop();
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       cancelAnimationFrame(animationId);
+      clearTimeout(resizeTimeout);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleResize);
     };
